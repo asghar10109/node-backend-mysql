@@ -1,0 +1,34 @@
+<Table >
+          {Array.isArray(search)&& search.map((ele,index)=>{
+            return(
+              <>
+              <thead>
+                  <tr>
+                    <th style={{color:'red'}}>Photo</th>
+                    <th style={{color:'red'}}>Product Name</th>
+                  </tr>
+              </thead>
+              <tbody>
+              <tr>
+                          <td>
+                            
+                          </td>
+                          <td>
+                            <p key={index}>name: {ele.name}</p>
+                            <p key={index}>Price : ₹{ele.price}</p>
+                            <p key={index}>size : {ele.size}</p>
+                            
+                          </td>
+
+                          
+                        </tr>
+              </tbody>
+              </>
+            )
+          })}
+
+                
+        </Table>
+
+
+

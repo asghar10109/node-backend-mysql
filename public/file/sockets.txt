@@ -1,0 +1,154 @@
+frontend
+
+import React, { useState, useEffect } from 'react'
+
+import socketIO from 'socket.io-client';
+const Socket = socketIO.connect('http://localhost:3000');
+
+const Chatapp = () => {
+    const [inputfield, setinpufield] = useState({
+      name: "",
+      room: "",
+      message: "",
+    });
+    const [messagelist, setmessagelist] = useState([]);
+    useEffect(() => {
+      Socket.on("receive_message", (data) => {
+        setmessagelist([...messagelist, data]);
+      });
+    }, [messagelist]);
+  
+    const sendmessage = async () => {
+      console.log("message:", inputfield);
+      const newMessage = {
+        name: inputfield.name,
+        message: inputfield.message,
+      };
+      await Socket.emit("send_message", inputfield);
+      setinpufield({
+        ...inputfield,
+        message: "",
+      }); // clear the message input field
+    };
+  
+    const [ischatting, setischatting] = useState(false);
+    const inputhandler = (e) => {
+      setinpufield({
+        ...inputfield,
+        [e.target.name]: e.target.value,
+      });
+    };
+  
+    const enterRoom = () => {
+      console.log(inputfield);
+      Socket.emit("join_room", inputfield.room);
+      setischatting(true);
+    };
+  
+    console.log("data", messagelist);
+  
+    return (
+      <div className="App">
+        {!ischatting ? (
+          <>
+            <input
+              type="text"
+              placeholder="enter name"
+              name="name"
+              onChange={inputhandler}
+            />
+            <input
+              type="text"
+              placeholder="enter room"
+              name="room"
+              onChange={inputhandler}
+            />
+  
+            <button onClick={enterRoom}>Enter the room </button>
+          </>
+        ) : (
+          <>
+            <div>
+              <h2>Chat Room</h2>
+  
+              <input
+                type="text"
+                placeholder="enter message"
+                name="message"
+                value={inputfield.message}
+                onChange={inputhandler}
+              />
+              <button onClick={sendmessage}>Enter the message </button>
+  
+              {messagelist.map((ele, index) => {
+                return (
+                  <div key={index}>
+                    {ele.name}: {ele.message}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+  
+  export default Chatapp;
+
+
+
+
+
+backend
+
+
+const express = require('express');
+const app = express();
+const PORT = 3000;
+
+
+//New imports
+const http = require('http').Server(app);
+const cors = require('cors');
+
+app.use(cors());
+
+
+app.get('/', (req, res) => {
+    res.send('Server is running');
+});
+
+
+
+
+
+
+
+const server = app.listen(PORT, () => {
+    console.log(`Server listening on ${PORT}`);
+});
+
+const socketIO = require('socket.io')(server, {
+    cors: {
+        origin: "*"
+    }
+});
+
+//Add this before the app.get() block
+socketIO.on('connection', (socket) => {
+    console.log(`⚡: ${socket.id} user just connected!`);
+    socket.on('join_room',(data)=>{
+        console.log("join :",data)
+        socket.join(data)
+    })
+    socket.on('send_message',(data)=>{
+        console.log("sending :",data);
+        socketIO.to(data.room).emit('receive_message',data)
+    })
+    socket.on('disconnect', () => {
+        console.log('🔥: A user disconnected');
+    });
+
+    
+});
